@@ -518,6 +518,107 @@ const exportAsDocument = async (req, res) => {
 };
 
 //Typography configurations for modern ebook styling
+const renderMarkdown = (doc, markdown) => {
+  if (!markdown || markdown.trim() === "") return;
+  const tokens = md.parse(markdown, {});
+  let inList = false;
+  let listType = null;
+  let orderedListCounter = 1;
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    try {
+      if (token.type === "heading_open") {
+        const level = parseInt(token.tag.substring(1), 10);
+        let fontSize;
+        switch (level) {
+          case 1:
+            fontSize = TYPOGRAPHY.sizes.h1;
+            break;
+          case 2:
+            fontSize = TYPOGRAPHY.sizes.h2;
+            break;
+          case 3:
+            fontSize = TYPOGRAPHY.sizes.h3;
+            break;
+          default:
+            fontSize = TYPOGRAPHY.sizes.h3;
+        }
+        doc.moveDown(TYPOGRAPHY.spacing.headingSpacing.before / TYPOGRAPHY.sizes.body);
+        doc.font(TYPOGRAPHY.fonts.sansBold).fontSize(fontSize).fillColor(TYPOGRAPHY.colors.heading);
+        if (i + 1 < tokens.length && tokens[i + 1].type === "inline") {
+          renderInlineTokens(doc, tokens[i + 1].children, {
+            align: "left",
+            lineGap: 0,
+          });
+          i++;
+        }
+        doc.moveDown(TYPOGRAPHY.spacing.headingSpacing.after / TYPOGRAPHY.sizes.body);
+        if (i + 1 < tokens.length && tokens[i + 1].type === "heading_close") {
+          i++;
+        }
+      } else if (token.type === "paragraph_open") {
+        doc.font(TYPOGRAPHY.fonts.serif).fontSize(TYPOGRAPHY.sizes.body).fillColor(TYPOGRAPHY.colors.text);
+        if (i + 1 < tokens.length && tokens[i + 1].type === "inline") {
+          renderInlineTokens(doc, tokens[i + 1].children, {
+            align: "justify",
+            lineGap: 2,
+          });
+          i++;
+        }
+        if (!inList) {
+          doc.moveDown(TYPOGRAPHY.spacing.paragraphSpacing / TYPOGRAPHY.sizes.body);
+        }
+      } else if (token.type === "bullet_list_open") {
+        inList = true;
+        listType = "bullet";
+        doc.moveDown(TYPOGRAPHY.spacing.listSpacing / TYPOGRAPHY.sizes.body);
+      } else if (token.type === "bullet_list_close") {
+        inList = false;
+        listType = null;
+        doc.moveDown(TYPOGRAPHY.spacing.paragraphSpacing / TYPOGRAPHY.sizes.body);
+      } else if (token.type === "ordered_list_open") {
+        inList = true;
+        listType = "ordered";
+        orderedListCounter = 1;
+        doc.moveDown(TYPOGRAPHY.spacing.listSpacing / TYPOGRAPHY.sizes.body);
+      } else if (token.type === "ordered_list_close") {
+        inList = false;
+        listType = null;
+        orderedListCounter = 1;
+        doc.moveDown(TYPOGRAPHY.spacing.paragraphSpacing / TYPOGRAPHY.sizes.body);
+      } else if (token.type === "list_item_open") {
+        let bullet = "";
+        if (listType === "bullet") {
+          bullet = "* ";
+        } else if (listType === "ordered") {
+          bullet = `${orderedListCounter}`;
+          orderedListCounter++;
+        }
+        doc.font(TYPOGRAPHY.fonts.serif).fontSize(TYPOGRAPHY.sizes.body).fillColor(TYPOGRAPHY.colors.text);
+        doc.text(bullet, { indent: 20, continued: true });
+      } else if (token.type === "code_block" || token.type === "fence") {
+        doc.moveDown(TYPOGRAPHY.spacing.paragraphSpacing / TYPOGRAPHY.sizes.body);
+      } else if (token.type === "hr") {
+        doc.moveDown();
+        const y = doc.y;
+        doc.moveTo(doc.page.margins.left, y).lineTo(doc.page.width - doc.page.margins.right, y).stroke();
+        doc.moveDown();
+      }
+      // Add more token types as needed
+    } catch (tokenError) {
+      console.error("Error processing tokens", token.type, tokenError);
+      continue;
+    }
+  }
+};
+
+
+
+
+
+
+
+
 
 const TYPOGRAPHY = {
   fonts: {
@@ -611,24 +712,18 @@ const renderInlineTokens = (doc, tokens, options = {}) => {
 const exportAsPDF = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
-
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     }
-
     if (book.userId.toString() !== req.user._id.toString()) {
-      return res
-        .status(403)
-        .json({ message: "You do not have permission to export this book" });
+      return res.status(403).json({ message: "You do not have permission to export this book" });
     }
-
-    //create pdf with safe settings
+    // Create PDF
     const doc = new PDFDocument({
       margins: { top: 72, right: 72, bottom: 72, left: 72 },
       bufferPages: true,
       autoFirstPage: false,
     });
-    //set headers before piping
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -636,15 +731,16 @@ const exportAsPDF = async (req, res) => {
     );
     doc.pipe(res);
 
-    if (book.coverImage && !book.coverImage.includes("pravatar")) {
-      const imagePath = book.coverImage.substring[1];
+    // Always add at least one page
+    doc.addPage();
 
+    // Cover image (if exists and not a placeholder)
+    if (book.coverImage && !book.coverImage.includes("pravatar")) {
       try {
+        const imagePath = book.coverImage.startsWith("/") ? path.join(__dirname, "..", book.coverImage) : book.coverImage;
         if (fs.existsSync(imagePath)) {
-          const pageWidth =
-            doc.page.width - doc.page.margins.left - doc.page.margins.right;
-          const pageHeight =
-            doc.page.height - doc.page.margins.top - doc.page.margins.bottom;
+          const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+          const pageHeight = doc.page.height - doc.page.margins.top - doc.page.margins.bottom;
           doc.image(imagePath, doc.page.margins.left, doc.page.margins.top, {
             fit: [pageWidth * 0.8, pageHeight * 0.8],
             align: "center",
@@ -655,211 +751,81 @@ const exportAsPDF = async (req, res) => {
       } catch (imgErr) {
         console.warn("Could not add cover image:", imgErr.message);
       }
-      //Title page
-      doc
-        .font(TYPOGRAPHY.fonts.sansBold)
-        .fontSize(TYPOGRAPHY.sizes.title)
-        .fillColor(TYPOGRAPHY.colors.heading)
-        .text(book.title, {
-          align: "center",
-        });
-      doc.moveDown(2);
+    }
 
-      if (book.subtitle && book.subtitle.trim()) {
-        doc
-          .font(TYPOGRAPHY.fonts.sans)
-          .fontSize(TYPOGRAPHY.sizes.h2)
-          .fillColor(TYPOGRAPHY.colors.text)
-          .text(book.subtitle, {
-            align: "center",
-          });
-        doc.moveDown(1);
-      }
-      doc
-        .font(TYPOGRAPHY.fonts.sans)
-        .fontSize(TYPOGRAPHY.sizes.author)
-        .fillColor(TYPOGRAPHY.colors.text)
-        .text(`by ${book.author || "Unknown Author"}`, {
-          align: "center",
-        });
+    // Title page
+    doc.fontSize(24).text(book.title, { align: "center" });
+    doc.moveDown(2);
+    if (book.subtitle && book.subtitle.trim()) {
+      doc.fontSize(16).text(book.subtitle, { align: "center" });
+      doc.moveDown(1);
+    }
+    doc.fontSize(12).text(`by ${book.author || "Unknown Author"}`, { align: "center" });
+    doc.addPage();
 
-      //process chapters
-      if (book.chapters && book.chapters.length > 0) {
-        book.chapters.forEach((chapter, index) => {
-          try {
-            doc.addPage();
+    // Chapters
+    if (book.chapters && book.chapters.length > 0) {
+      book.chapters.forEach((chapter, index) => {
+        doc.addPage();
+        doc.fontSize(18).text(chapter.title || `Chapter ${index + 1}`, { align: "center" });
+        doc.moveDown();
+        if (chapter.content && chapter.content.trim()) {
+          // Simple markdown strip for now
+          const contentText = chapter.content
+            .replace(/#{1,6}\s+/g, "")
+            .replace(/\*\*(.*?)\*\*/g, "$1")
+            .replace(/\*(.*?)\*/g, "$1")
+            .replace(/\[(.*?)\]\(.*?\)/g, "$1")
+            .replace(/\n\n/g, "\n");
+          doc.fontSize(12).text(contentText, { align: "justify" });
+        }
+      });
+    }
 
-            doc
-              .font(TYPOGRAPHY.fonts.sansBold)
-              .fontSize(TYPOGRAPHY.sizes.chapterTitle)
-              .fillColor(TYPOGRAPHY.colors.heading)
-              .text(chapter.title || "Chapter ${index + 1}", {
-                align: "center",
-              });
-            doc.moveDown(
-              TYPOGRAPHY.spacing.chapterSpacing / TYPOGRAPHY.size.body
-            );
-
-            //chapter content
-            if (chapter.content && chapter.content.trim()) {
-              renderMarkdown(chapter.content, doc);
-            }
-          } catch (chapErr) {
-            console.error(`Error processing chapter ${index + 1}:`, chapErr);
-          }
-        });
-
-        //Finalize PDF
-
-        doc.end();
+    // Add page numbers after all content, before doc.end()
+    if (doc.bufferedPageRange && doc.bufferedPageRange().count > 0) {
+      const range = doc.bufferedPageRange();
+      for (let i = 0; i < range.count; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(10).text(
+          `Page ${i + 1} of ${range.count}`,
+          0,
+          doc.page.height - 50,
+          { align: "center" }
+        );
       }
     }
+    doc.end();
   } catch (err) {
     console.error("Error exporting PDF:", err);
     if (!res.headersSent) {
-      res
-        .status(500)
-        .json({ message: "An error occurred while exporting the PDF" });
+      res.status(500).json({ message: "An error occurred while exporting the PDF" });
     }
   }
 
-  // try {
-  //   const { bookId } = req.params;
 
-  //   // Fetch the book from database
-  //   const book = await Book.findById(bookId);
-  //   if (!book) {
-  //     return res.status(404).json({ message: "Book not found" });
-  //   }
+      // Ensure at least one page exists before writing
+      if (doc.page === null) {
+        doc.addPage();
+      }
 
-  //   // Verify user authorization
-  //   if (book.userId.toString() !== req.user.id.toString()) {
-  //     return res.status(401).json({ message: "Not authorized to export this book" });
-  //   }
+      // ... (write all your content here, e.g., title, chapters, etc.) ...
 
-  //   // Create PDF document
-  //   const pdfDoc = new PDFDocument({
-  //     margin: 50,
-  //     bufferPages: true,
-  //     font: "Helvetica",
-  //   });
-
-  //   // Set response headers for PDF download
-  //   res.setHeader("Content-Type", "application/pdf");
-  //   res.setHeader(
-  //     "Content-Disposition",
-  //     `attachment; filename="${book.title.replace(/\s+/g, "_") || "book"}.pdf"`
-  //   );
-
-  //   // Pipe PDF to response
-  //   pdfDoc.pipe(res);
-
-  //   // Add title page
-  //   pdfDoc.fontSize(32).font("Helvetica-Bold").text(book.title, { align: "center" });
-  //   pdfDoc.moveDown(0.5);
-
-  //   if (book.subtitle) {
-  //     pdfDoc.fontSize(18).font("Helvetica").text(book.subtitle, { align: "center" });
-  //     pdfDoc.moveDown(1);
-  //   }
-
-  //   pdfDoc.fontSize(14).font("Helvetica").text(`by ${book.author}`, { align: "center" });
-  //   pdfDoc.moveDown(2);
-
-  //   // Add cover image if exists
-  //   if (book.coverImage && book.coverImage.trim() !== "") {
-  //     try {
-  //       const imagePath = path.join(__dirname, "..", book.coverImage);
-  //       if (fs.existsSync(imagePath)) {
-  //         pdfDoc.image(imagePath, {
-  //           width: 200,
-  //           align: "center",
-  //         });
-  //         pdfDoc.moveDown(1);
-  //       }
-  //     } catch (imgErr) {
-  //       console.warn("Could not add cover image:", imgErr.message);
-  //     }
-  //   }
-
-  //   // Add page break after title
-  //   pdfDoc.addPage();
-
-  //   // Add table of contents (chapters)
-  //   if (book.chapter && book.chapter.length > 0) {
-  //     pdfDoc.fontSize(20).font("Helvetica-Bold").text("Table of Contents", { underline: true });
-  //     pdfDoc.moveDown(0.5);
-
-  //     book.chapter.forEach((chapter, index) => {
-  //       pdfDoc
-  //         .fontSize(12)
-  //         .font("Helvetica")
-  //         .text(`${index + 1}. ${chapter.title}`, {
-  //           indent: 20,
-  //         });
-  //     });
-
-  //     pdfDoc.addPage();
-  //   }
-
-  //   // Add chapters
-  //   if (book.chapter && book.chapter.length > 0) {
-  //     book.chapter.forEach((chapter, index) => {
-  //       // Chapter title
-  //       pdfDoc.fontSize(18).font("Helvetica-Bold").text(`Chapter ${index + 1}: ${chapter.title}`, {
-  //         underline: true,
-  //       });
-  //       pdfDoc.moveDown(0.5);
-
-  //       // Chapter description
-  //       if (chapter.description) {
-  //         pdfDoc.fontSize(11).font("Helvetica-Oblique").text(chapter.description, {
-  //           color: "#666666",
-  //         });
-  //         pdfDoc.moveDown(0.5);
-  //       }
-
-  //       // Chapter content (parse markdown if needed)
-  //       if (chapter.content) {
-  //         // Simple markdown to text conversion
-  //         let contentText = chapter.content
-  //           .replace(/#{1,6}\s+/g, "") // Remove markdown headings
-  //           .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold markdown
-  //           .replace(/\*(.*?)\*/g, "$1") // Remove italic markdown
-  //           .replace(/\[(.*?)\]\(.*?\)/g, "$1") // Convert links to plain text
-  //           .replace(/\n\n/g, "\n"); // Normalize line breaks
-
-  //         pdfDoc.fontSize(11).font("Helvetica").text(contentText, {
-  //           align: "justify",
-  //         });
-  //       }
-
-  //       pdfDoc.moveDown(1);
-
-  //       // Add page break between chapters (except for the last one)
-  //       if (index < book.chapter.length - 1) {
-  //         pdfDoc.addPage();
-  //       }
-  //     });
-  //   }
-
-  //   // Add footer with page numbers
-  //   const pageCount = pdfDoc.bufferedPageRange().count;
-  //   for (let i = 1; i <= pageCount; i++) {
-  //     pdfDoc.switchToPage(i - 1);
-  //     pdfDoc.fontSize(10).text(`Page ${i} of ${pageCount}`, 50, pdfDoc.page.height - 50, {
-  //       align: "center",
-  //     });
-  //   }
-
-  //   // Finalize PDF
-  //   pdfDoc.end();
-  // } catch (error) {
-  //   console.error("Error exporting PDF:", error);
-  //   if (!res.headersSent) {
-  //     res.status(500).json({ message: "An error occurred while exporting the PDF" });
-  //   }
-  // }
+      // Add page numbers only if there are pages
+      if (doc.bufferedPageRange && doc.bufferedPageRange().count > 0) {
+        const range = doc.bufferedPageRange();
+        for (let i = 0; i < range.count; i++) {
+          doc.switchToPage(i);
+          doc.fontSize(10).text(
+            `Page ${i + 1} of ${range.count}`,
+            0,
+            doc.page.height - 50,
+            { align: "center" }
+          );
+        }
+      }
+      // Finalize PDF
+      doc.end();
 };
 
 module.exports = {

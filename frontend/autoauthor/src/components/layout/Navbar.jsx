@@ -4,7 +4,7 @@ import ProfileDropdown from "./ProfileDropdown";
 import { Menu, X, BookOpen, LogOut, FastForward } from "lucide-react";
 
 const Navbar = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
@@ -94,18 +94,59 @@ const Navbar = () => {
       </div>
       {/*mobile menu*/}
       {isOpen && (
-        <div className="">
-          <nav className="">
+        <div className="lg:hidden bg-white border-t border-gray-100 animate-in slide-in-from-top duration-200">
+          <nav className="px-4 py-4 space-y-1">
             {navLinks.map((link) => (
               <a
                 href={link.href}
                 key={link.name}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-violet-600 rounded-lg hover:bg-violet-50/50 transition-all duration-200"
+                className="block px-4 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:text-violet-600 hover:bg-violet-50 transition-all duration-200"
               >
                 {link.name}
               </a>
             ))}
           </nav>
+          <div className="px-4 py-4 border-t border-gray-100">
+            {isAuthenticated ? (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 px-2">
+                  <div className="h-8 w-8 bg-gradient-to-br from-violet-400 to-violet-500 rounded-xl flex items-center justify-center ">
+                    <span className="text-white font-semibold text-sm">
+                      {user?.name?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {user?.name}
+                    </div>
+                    <div className="text-xs text-gray-500">{user?.email}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => logout()}
+                  className="w-full flex items-center space-x-2 px-2 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2 px-2">
+                <a
+                  href="/login"
+                  className="block w-full px-4 py-2 text-center text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                >
+                  Login
+                </a>
+                <a
+                  href="/signup"
+                  className="block w-full px-4 py-2 text-center text-sm font-medium text-white bg-gradient-to-r from-violet-400 to-purple-500 rounded-lg hover:from-violet-700 hover:to-purple-700 shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all duration-200"
+                >
+                  Get Started
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </header>

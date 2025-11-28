@@ -56,7 +56,7 @@ const Hero = () => {
               </div>
               <div className="w-px h-12 bg-gray-200 "></div>
               <div>
-                <div className="text-2xl font-bold text-gray-9 ">4.9/5</div>
+                <div className="text-2xl font-bold text-gray-900 ">4.9/5</div>
                 <div className="text-sm text-gray-600 ">User Rating</div>
               </div>
               <div className="w-px h-12 bg-gray-200"></div>
@@ -68,7 +68,7 @@ const Hero = () => {
           </div>
           <div className="relative lg:pl-8">
             <div className="relative">
-              <div className="absolute -insert-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-3xl opacity-20 blur-2xl"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-3xl opacity-20 blur-2xl"></div>
               <div className="relative bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100">
                 <img
                   src={HeroImg}
@@ -77,7 +77,7 @@ const Hero = () => {
                 />
                 <div className="absolute top-6 right-6 bg-white rounded-2xl shadow-xl p-4 backdrop-blur-sm border border-gray-100 animate-in fade-in slide-in-from-right duration-700">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center ">
+                    <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center">
                       <Zap className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -91,7 +91,7 @@ const Hero = () => {
 
                 <div className="absolute bottom-6 left-6 bg-white rounded-2xl shadow-xl p-4 backdrop-blur-sm border border-gray-100 animate-in fade-in slide-in-from-left duration-700 delay-300">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emarald-600 rounded-lg flex items-center justify-center ">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center ">
                       <BookOpen className="w-5 h-5 text-white" />
                     </div>
                     <div>

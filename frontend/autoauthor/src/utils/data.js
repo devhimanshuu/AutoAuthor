@@ -11,21 +11,21 @@ export const FEATURES = [
   {
     title: "Immersive Reader",
     description:
-      "Preview your ebook in a clean, read-only format. adjust font sizes for a comfortable reading experience ",
+      "Preview your ebook in a clean, read-only format. Adjust font sizes for a comfortable reading experience.",
     icon: BookOpen,
     gradient: "from-blue-500 to-cyan-600",
   },
   {
     title: "One Click Export",
     description:
-      "Export your ebook to PDF, and Docx format  instantly, ready for publishing",
+      "Export your ebook to PDF, and Docx format instantly, ready for publishing.",
     icon: Download,
-    gradient: "from-emarald-500 to-teal-600",
+    gradient: "from-emerald-500 to-teal-600",
   },
   {
-    title: "ebook Management",
+    title: "Ebook Management",
     description:
-      "Organize all your ebook projects in a personal dashboard. easily track progress, edit drafts and manage books.",
+      "Organize all your ebook projects in a personal dashboard. Easily track progress, edit drafts and manage books.",
     icon: Library,
     gradient: "from-pink-500 to-rose-600",
   },
@@ -34,8 +34,8 @@ export const FEATURES = [
 export const TESTIMONIALS = [
   {
     quote:
-      "This platform made it so easy to write and publish my first ebook. The AI assistant is a game changer",
-    author: "Samy Watson",
+      "This platform made it so easy to write and publish my first ebook. The AI assistant is a game changer.",
+    author: "Sammy Watson",
     title: "Marketing Expert",
     avatar:
       "https://images.upslash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
@@ -43,7 +43,7 @@ export const TESTIMONIALS = [
   },
   {
     quote:
-      "I love the customizable templates. i was able to create a beautiful ebook that matches my brand perfect image",
+      "I love the customizable templates. I was able to create a beautiful ebook that matches my brand perfectly.",
     author: "John Savny",
     title: "BestSelling Author",
     avatar:
@@ -52,7 +52,7 @@ export const TESTIMONIALS = [
   },
   {
     quote:
-      "Thie one click export feature saved me so much time. i was able to publish my ebook on multiple platform",
+      "This one click export feature saved me so much time. I was able to publish my ebook on multiple platforms.",
     author: "Peter Jones",
     title: "Indian Publisher",
     avatar:

@@ -38,7 +38,7 @@ export const TESTIMONIALS = [
     author: "Sammy Watson",
     title: "Marketing Expert",
     avatar:
-      "https://images.upslash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
     rating: 5,
   },
   {
@@ -47,16 +47,16 @@ export const TESTIMONIALS = [
     author: "John Savny",
     title: "BestSelling Author",
     avatar:
-      "https://images.upslash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
     rating: 5,
   },
   {
     quote:
       "This one click export feature saved me so much time. I was able to publish my ebook on multiple platforms.",
     author: "Peter Jones",
-    title: "Indian Publisher",
+    title: "American Publisher",
     avatar:
-      "https://images.upslash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
     rating: 5,
   },
 ];
